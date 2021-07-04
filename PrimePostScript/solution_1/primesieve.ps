@@ -1,34 +1,36 @@
 % limit primesieve -> sieve
 /primesieve {
-    dup 1 le { 1 sub } if % set limit to 0 if ≤ 1
-    1 add 2 idiv dup string exch % sieve, length
+    dup 1 le {
+        pop () % return empty sieve if limit ≤ 1
+    } {
+        1 add 2 idiv string % sieve (only odd numbers)
+        dup 0 1 put % mark 1 as non-prime
+        0 % current sieve position
 
-    1 % current prime (0-based index into sieve)
-    {
-        dup 2 mul 1 add % the actual prime number
-        dup dup mul 1 add 2 idiv 1 sub % from
-        3 index 1 sub % to: sieve length - 1
+        1 index { % iterate over sieve
+            0 eq { % skip non-primes
+                dup 2 mul 1 add % calculate current prime from sieve position
+                dup dup mul 1 add 2 idiv 1 sub % from: position of squared prime
+                3 index length 1 sub % to: sieve length - 1
 
-        2 copy gt { pop pop pop exit } if % break condition: from > to
+                2 copy gt { pop pop pop exit } if % break condition: from > to
 
-        % iterate over indices corresponding to every second multiple 
-        % of the current prime number, starting from its square
-        3 -1 roll exch % rearrange stack: from-step-to
-        {
-            3 index % grab sieve
-            exch 1 put % mark as non-prime
-        } for
+                % iterate over indices corresponding to every second multiple
+                % of the current prime number, starting from its square
+                3 -1 roll exch % rearrange stack for loop: from-step-to
+                {
+                    2 index % grab sieve
+                    exch 1 put % mark as non-prime
+                } for
+            } if
+            1 add % track sieve position
+        } forall
 
-        { % find next prime
-            1 add
-            dup
-            3 index % sieve
-            exch get
-            0 eq { exit } if
-        } loop
-    } loop
+        pop % remove sieve position from the stack
 
-    pop pop
+        % 2 is a special case: mark first position as prime so that the count is correct
+        dup 0 0 put
+    } ifelse
 } def
 
 % sieve callback iterprimes
@@ -47,11 +49,8 @@
 
 % limit countprimes -> count
 /countprimes {
-    /n 0 def
     primesieve
-    { pop /n n 1 add def }
-    iterprimes
-    n
+    0 exch { 1 exch sub add } forall
 } def
 
 % limit listprimes
